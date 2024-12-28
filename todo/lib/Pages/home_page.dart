@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:todo/utils/todo_list.dart';
 
 class HomePage extends StatefulWidget {
-  HomePage({super.key});
+  const HomePage({super.key});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -144,8 +144,8 @@ class _HomePageState extends State<HomePage> {
             ),
             FloatingActionButton(
               onPressed: saveNewTask,
-              child: const Icon(Icons.add),
               backgroundColor: Colors.yellow,
+              child: const Icon(Icons.add),
             ),
           ],
         ),
