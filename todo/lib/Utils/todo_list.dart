@@ -8,12 +8,14 @@ class TodoList extends StatelessWidget {
     required this.taskCompleted,
     required this.onChanged,
     required this.deleteFunction,
+    this.editFunction,
   });
 
   final String taskName;
   final bool taskCompleted;
   final Function(bool?)? onChanged;
   final Function(BuildContext)? deleteFunction;
+  final VoidCallback? editFunction;
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +28,7 @@ class TodoList extends StatelessWidget {
       ),
       child: Slidable(
         endActionPane: ActionPane(
-          motion: StretchMotion(),
+          motion: const StretchMotion(),
           children: [
             SlidableAction(
               onPressed: deleteFunction,
@@ -52,19 +54,26 @@ class TodoList extends StatelessWidget {
                   color: Colors.black,
                 ),
               ),
-              Text(
-                taskName,
-                style: TextStyle(
-                  color: Colors.black,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  decoration: taskCompleted
-                      ? TextDecoration.lineThrough
-                      : TextDecoration.none,
-                  decorationColor: Colors.black,
-                  decorationThickness: 2,
+              Expanded(
+                child: Text(
+                  taskName,
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    decoration: taskCompleted
+                        ? TextDecoration.lineThrough
+                        : TextDecoration.none,
+                    decorationColor: Colors.black,
+                    decorationThickness: 2,
+                  ),
                 ),
               ),
+                IconButton(
+                  icon: const Icon(Icons.edit),
+                  color: Colors.black,
+                  onPressed: editFunction,
+                ),
             ],
           ),
         ),

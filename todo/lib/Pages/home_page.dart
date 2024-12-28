@@ -44,6 +44,62 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  void sorting() {
+    setState(() {
+      pendingTasks.sort();
+    });
+  }
+
+  void editTask(int index) {
+    TextEditingController editController = TextEditingController();
+    String currentTask = pendingTasks[index];
+    editController.text = currentTask;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Edit Task"),
+          content: TextField(
+            controller: editController,
+            decoration: const InputDecoration(
+              labelText: "Task Name",
+              border: OutlineInputBorder(),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  pendingTasks[index] = editController.text;
+                });
+                Navigator.of(context).pop();
+              },
+              child: const Text("Save"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+
+  void reorderData(int oldIndex, int newIndex) {
+    setState(() {
+      if (newIndex > oldIndex) {
+        newIndex -= 1;
+      }
+      final item = pendingTasks.removeAt(oldIndex);
+      pendingTasks.insert(newIndex, item);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -71,16 +127,21 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
           Expanded(
-            child: ListView.builder(
-              itemCount: pendingTasks.length,
-              itemBuilder: (BuildContext context, index) {
-                return TodoList(
-                  taskName: pendingTasks[index],
-                  taskCompleted: false,
-                  onChanged: (value) => checkBoxChanged(index, true),
-                  deleteFunction: (context) => deleteTask(index, false),
-                );
-              },
+            child: ReorderableListView(
+              onReorder: reorderData,
+              children: [
+                for (int index = 0; index < pendingTasks.length; index++)
+                  Container(
+                    key: ValueKey(pendingTasks[index]),
+                    child: TodoList(
+                      taskName: pendingTasks[index],
+                      taskCompleted: false,
+                      onChanged: (value) => checkBoxChanged(index, true),
+                      deleteFunction: (context) => deleteTask(index, false),
+                      editFunction: () => editTask(index), // Edit only for pending
+                    ),
+                  ),
+              ],
             ),
           ),
           Padding(
