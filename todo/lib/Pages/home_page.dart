@@ -10,8 +10,8 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final _controller = TextEditingController();
-  List pendingTasks = [];
-  List completedTasks = [];
+  List<Map<String, dynamic>> pendingTasks = [];
+  List<Map<String, dynamic>> completedTasks = [];
 
   void checkBoxChanged(int index, bool isCompleted) {
     setState(() {
@@ -27,11 +27,63 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  void saveNewTask() {
-    setState(() {
-      pendingTasks.add(_controller.text); // taskName
-      _controller.clear();
-    });
+  void saveNewTask() async {
+    // Ensure the user has entered a task name
+    if (_controller.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a task name')),
+      );
+      return;
+    }
+
+    // Show Date Picker
+    final date = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+
+    if (date == null) {
+      // User canceled date picker
+      // Save the task
+      setState(() {
+        pendingTasks.add({
+          'taskName': _controller.text,
+        });
+        _controller.clear();
+      });
+    }
+    else {
+      DateTime now = DateTime.now();
+      int hour = now.hour;
+      int minute = now.minute;
+      final time = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.now(),
+      );
+      if (time != null) {
+        hour = time.hour;
+        minute = time.minute;
+      }
+      final selectedDateTime = DateTime(
+        date.year,
+        date.month,
+        date.day,
+        hour,
+        minute,
+      );
+      setState(() {
+        pendingTasks.add({
+          'taskName': _controller.text,
+          'dateTime': selectedDateTime, // Include the selected dateTime
+        });
+        _controller.clear();
+      });
+    }
+
+    // Save the task
+
   }
 
   void deleteTask(int index, bool isCompleted) {
@@ -44,6 +96,41 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  Future<void> addOrUpdateDateTime(int index, bool isPending) async {
+    final date = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+    if (date != null) {
+      final time = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.now(),
+      );
+      if (time != null) {
+        setState(() {
+          final selectedDateTime = DateTime(
+            date.year,
+            date.month,
+            date.day,
+            time.hour,
+            time.minute,
+          );
+
+          if (isPending) {
+            // Update pending task's dateTime
+            pendingTasks[index]['dateTime'] = selectedDateTime;
+          } else {
+            // Update completed task's dateTime
+            completedTasks[index]['dateTime'] = selectedDateTime;
+          }
+        });
+      }
+    }
+  }
+
+
   void sorting() {
     setState(() {
       pendingTasks.sort();
@@ -52,7 +139,7 @@ class _HomePageState extends State<HomePage> {
 
   void editTask(int index) {
     TextEditingController editController = TextEditingController();
-    String currentTask = pendingTasks[index];
+    String currentTask = pendingTasks[index]['taskName'];
     editController.text = currentTask;
 
     showDialog(
@@ -77,7 +164,7 @@ class _HomePageState extends State<HomePage> {
             ElevatedButton(
               onPressed: () {
                 setState(() {
-                  pendingTasks[index] = editController.text;
+                  pendingTasks[index]['taskName'] = editController.text;
                 });
                 Navigator.of(context).pop();
               },
@@ -134,11 +221,13 @@ class _HomePageState extends State<HomePage> {
                   Container(
                     key: ValueKey(pendingTasks[index]),
                     child: TodoList(
-                      taskName: pendingTasks[index],
+                      taskName: pendingTasks[index]['taskName'],
                       taskCompleted: false,
+                      dateTime: pendingTasks[index]['dateTime'],
                       onChanged: (value) => checkBoxChanged(index, true),
                       deleteFunction: (context) => deleteTask(index, false),
-                      editFunction: () => editTask(index), // Edit only for pending
+                      editFunction: () => editTask(index),
+                      onAddDateTime: () => addOrUpdateDateTime(index, true),
                     ),
                   ),
               ],
@@ -162,8 +251,9 @@ class _HomePageState extends State<HomePage> {
               itemCount: completedTasks.length,
               itemBuilder: (BuildContext context, index) {
                 return TodoList(
-                  taskName: completedTasks[index],
+                  taskName: completedTasks[index]['taskName'],
                   taskCompleted: true,
+                  dateTime: completedTasks[index]['dateTime'],
                   onChanged: (value) => checkBoxChanged(index, false),
                   deleteFunction: (context) => deleteTask(index, true),
                 );
